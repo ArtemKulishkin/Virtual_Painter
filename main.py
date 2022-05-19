@@ -11,7 +11,7 @@ ERASE_THICKNESS = 100
 draw_color = (0, 0, 0)
 width = 1920
 height = 1080
-
+xp, yp = 0, 0
 imgCanvas = np.zeros((height, width, 3), np.uint8)
 
 folderPath = "Header"
@@ -51,19 +51,55 @@ while cap.isOpened():  # пока камера "работает"
                 cx, cy = (x1 + x2) // 2, (y1 + y2) // 2 
 
                 distance = detector.findDistance(4, 8, i)
+                cv2.circle(image, (cx, cy), BRUSH_THICKNESS//2, draw_color, cv2.FILLED)
                 if distance < 50:
                     if cy <= h:
                         if 321 <= cx <= 699:
                             header = header_list[0]
+                            draw = True
+                            erase = False
+                            draw_color = (0, 0, 255)
                         elif 742 <= cx <= 1120:
                             header = header_list[1]
+                            draw = True
+                            erase = False
+                            draw_color = (255, 0, 0)
                         elif 1173 <= cx <= 1551:
                             header = header_list[2]
+                            draw = True
+                            erase = False
+                            draw_color = (0, 255, 255)
                         elif 1674 <= cx <= 1861:
                             header = header_list[3]
+                            draw = False
+                            erase = True
+                            draw_color = (0, 0, 0)
+                        elif 0 <= cx <= 288:
+                            header = header_list[4]
+                            draw = False
+                            erase = False
+                            draw_color = (255, 255, 255)
+                            
+                    cv2.circle(image, (cx, cy), BRUSH_THICKNESS, draw_color, cv2.FILLED)
+
+                    if draw:
+                        if xp == 0 and yp == 0:
+                            xp, yp = cx, cy
+                        cv2.line(image, (xp, yp), (cx, cy), draw_color, BRUSH_THICKNESS)
+                        cv2.line(imgCanvas, (xp, yp), (cx, cy), draw_color, BRUSH_THICKNESS)
+                    if erase:
+                        if xp == 0 and yp == 0:
+                            xp, yp = cx, cy
+                        cv2.line(image, (xp, yp), (cx, cy), draw_color, ERASE_THICKNESS)
+                        cv2.line(imgCanvas, (xp, yp), (cx, cy), draw_color, ERASE_THICKNESS)
+                xp, yp = cx, cy
+        imgGray = cv2.cvtColor(imgCanvas, cv2.COLOR_BGR2GRAY)
+        _, imgInv = cv2.threshold(imgGray, 10, 255, cv2.THRESH_BINARY_INV)
+        imgInv = cv2.cvtColor(imgInv, cv2.COLOR_GRAY2BGR)
+        image = cv2.bitwise_and(image, imgInv)
+        image = cv2.bitwise_or(image, imgCanvas)
 
 
-         
 
         image[0:h, 0:w] = header
         cv2.imshow("window", image)
